@@ -51,16 +51,16 @@ spins %>% head(10)
     ## # Groups:   color [3]
     ##    spin_number color   bet all_green all_red green_balance red_balance streak
     ##          <int> <chr> <dbl>     <dbl>   <dbl>         <dbl>       <dbl>  <dbl>
-    ##  1           1 Black     5        -5      -5            95          95      0
-    ##  2           2 Black     5        -5      -5            90          90      1
-    ##  3           3 Red       5        -5       5            85          95      0
-    ##  4           4 Red       5        -5       5            80         100      1
-    ##  5           5 Green     5        85      -5           165          95      0
-    ##  6           6 Red       5        -5       5           160         100      0
-    ##  7           7 Red       5        -5       5           155         105      1
-    ##  8           8 Black     5        -5      -5           150         100      0
-    ##  9           9 Black     5        -5      -5           145          95      1
-    ## 10          10 Red       5        -5       5           140         100      0
+    ##  1           1 Red       5        -5       5            95         105      0
+    ##  2           2 Green     5        85      -5           180         100      0
+    ##  3           3 Black     5        -5      -5           175          95      0
+    ##  4           4 Black     5        -5      -5           170          90      1
+    ##  5           5 Red       5        -5       5           165          95      0
+    ##  6           6 Black     5        -5      -5           160          90      0
+    ##  7           7 Black     5        -5      -5           155          85      1
+    ##  8           8 Red       5        -5       5           150          90      0
+    ##  9           9 Black     5        -5      -5           145          85      0
+    ## 10          10 Black     5        -5      -5           140          80      1
     ## # ℹ 1 more variable: freq <int>
 
 To ensure the random sampling is correct, the below graph shows the
@@ -104,11 +104,11 @@ spins %>%
     ## # A tibble: 6 × 4
     ##   streak Black Green   Red
     ##    <dbl> <dbl> <dbl> <dbl>
-    ## 1      0  0.54  0.95  0.52
-    ## 2      1  0.25  0.05  0.25
-    ## 3      2  0.11  0.01  0.12
-    ## 4      3  0.05  0     0.05
-    ## 5      4  0.02  0     0.03
+    ## 1      0  0.52  0.94  0.52
+    ## 2      1  0.25  0.06  0.25
+    ## 3      2  0.12  0     0.12
+    ## 4      3  0.05  0     0.06
+    ## 5      4  0.03  0     0.03
     ## 6      5  0.01  0     0.01
 
 ### Simulation 1 - Constant Amount
@@ -198,16 +198,16 @@ spins %>% head(10)
 ```
 
     ##    spin_number color red_streak red_bet all_red red_balance
-    ## 1            1 Green          1       5      -5          95
+    ## 1            1 Black          1       5      -5          95
     ## 2            2 Black          2      10     -10          85
     ## 3            3 Black          3      20     -20          65
-    ## 4            4 Black          4      40     -40          25
-    ## 5            5   Red          5      80      80         105
-    ## 6            6 Black          1       5      -5         100
-    ## 7            7 Black          2      10     -10          90
-    ## 8            8   Red          3      20      20         110
-    ## 9            9 Black          1       5      -5         105
-    ## 10          10 Green          2      10     -10          95
+    ## 4            4   Red          4      40      40         105
+    ## 5            5 Black          1       5      -5         100
+    ## 6            6 Black          2      10     -10          90
+    ## 7            7   Red          3      20      20         110
+    ## 8            8 Black          1       5      -5         105
+    ## 9            9   Red          2      10      10         115
+    ## 10          10   Red          1       5       5         120
 
 ``` r
 ggplot(spins) +
@@ -224,3 +224,15 @@ ggplot(spins) +
 ```
 
 ![](Roulette_files/figure-gfm/unnamed-chunk-7-1.png)<!-- -->
+
+``` r
+summary(spins %>% select(red_bet,red_balance))
+```
+
+    ##     red_bet         red_balance    
+    ##  Min.   :   5.00   Min.   :-700.0  
+    ##  1st Qu.:   5.00   1st Qu.: 383.8  
+    ##  Median :  10.00   Median : 657.5  
+    ##  Mean   :  27.19   Mean   : 673.1  
+    ##  3rd Qu.:  20.00   3rd Qu.: 981.2  
+    ##  Max.   :1280.00   Max.   :1295.0

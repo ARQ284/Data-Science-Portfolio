@@ -142,3 +142,14 @@ ggplot(spins) +
     subtitle = "Double Every Losing Bet on Every Spin"
   )
 ```
+
+```{r}
+summary(spins %>% select(red_bet,red_balance))
+```
+
+
+
+
+
+
+
