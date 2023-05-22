@@ -22,7 +22,7 @@ mutate(color = sample(c("Black","Red","Green"),
        ) %>% 
 mutate(bet = bet_increment,
        all_green = if_else(color == "Green",bet*17,-bet),
-       all_red = if_else(color == "Red",bet*2,-bet),
+       all_red = if_else(color == "Red",bet,-bet),
        green_balance = begn_balance+cumsum(all_green),
        red_balance = begn_balance+cumsum(all_red),
        spin_number = as.integer(spin_number),
@@ -122,7 +122,7 @@ mutate(red_streak = coalesce(case_when(color == "Red" & lag(color) == "Red" ~ 1,
        ) %>% 
   left_join(triangle,by=c("red_streak"="spin")) %>% 
   rename(red_bet = bet_amount) %>% 
-  mutate(all_red = if_else(color == "Red",red_bet*2,-red_bet),
+  mutate(all_red = if_else(color == "Red",red_bet,-red_bet),
        red_balance = begn_balance+cumsum(all_red))
 
  
@@ -141,10 +141,4 @@ ggplot(spins) +
     title = "Martingale Method",
     subtitle = "Double Every Losing Bet on Every Spin"
   )
-```
-
-Maximum drawdown is -\$1,375 with a maximum wager of \$2,560 on the line.
-
-```{r}
-summary(spins %>% select(red_bet,red_balance))
 ```

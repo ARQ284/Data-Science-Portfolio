@@ -37,7 +37,7 @@ mutate(color = sample(c("Black","Red","Green"),
        ) %>% 
 mutate(bet = bet_increment,
        all_green = if_else(color == "Green",bet*17,-bet),
-       all_red = if_else(color == "Red",bet*2,-bet),
+       all_red = if_else(color == "Red",bet,-bet),
        green_balance = begn_balance+cumsum(all_green),
        red_balance = begn_balance+cumsum(all_red),
        spin_number = as.integer(spin_number),
@@ -48,19 +48,19 @@ spins %>% head(10)
 ```
 
     ## # A tibble: 10 × 9
-    ## # Groups:   color [2]
+    ## # Groups:   color [3]
     ##    spin_number color   bet all_green all_red green_balance red_balance streak
     ##          <int> <chr> <dbl>     <dbl>   <dbl>         <dbl>       <dbl>  <dbl>
     ##  1           1 Black     5        -5      -5            95          95      0
-    ##  2           2 Red       5        -5      10            90         105      0
-    ##  3           3 Red       5        -5      10            85         115      1
-    ##  4           4 Red       5        -5      10            80         125      2
-    ##  5           5 Black     5        -5      -5            75         120      0
-    ##  6           6 Black     5        -5      -5            70         115      1
-    ##  7           7 Red       5        -5      10            65         125      0
-    ##  8           8 Black     5        -5      -5            60         120      0
-    ##  9           9 Red       5        -5      10            55         130      0
-    ## 10          10 Black     5        -5      -5            50         125      0
+    ##  2           2 Black     5        -5      -5            90          90      1
+    ##  3           3 Red       5        -5       5            85          95      0
+    ##  4           4 Red       5        -5       5            80         100      1
+    ##  5           5 Green     5        85      -5           165          95      0
+    ##  6           6 Red       5        -5       5           160         100      0
+    ##  7           7 Red       5        -5       5           155         105      1
+    ##  8           8 Black     5        -5      -5           150         100      0
+    ##  9           9 Black     5        -5      -5           145          95      1
+    ## 10          10 Red       5        -5       5           140         100      0
     ## # ℹ 1 more variable: freq <int>
 
 To ensure the random sampling is correct, the below graph shows the
@@ -104,11 +104,11 @@ spins %>%
     ## # A tibble: 6 × 4
     ##   streak Black Green   Red
     ##    <dbl> <dbl> <dbl> <dbl>
-    ## 1      0  0.53  0.93  0.52
-    ## 2      1  0.25  0.07  0.25
-    ## 3      2  0.11  0     0.13
-    ## 4      3  0.06  0     0.06
-    ## 5      4  0.03  0     0.03
+    ## 1      0  0.54  0.95  0.52
+    ## 2      1  0.25  0.05  0.25
+    ## 3      2  0.11  0.01  0.12
+    ## 4      3  0.05  0     0.05
+    ## 5      4  0.02  0     0.03
     ## 6      5  0.01  0     0.01
 
 ### Simulation 1 - Constant Amount
@@ -190,7 +190,7 @@ mutate(red_streak = coalesce(case_when(color == "Red" & lag(color) == "Red" ~ 1,
        ) %>% 
   left_join(triangle,by=c("red_streak"="spin")) %>% 
   rename(red_bet = bet_amount) %>% 
-  mutate(all_red = if_else(color == "Red",red_bet*2,-red_bet),
+  mutate(all_red = if_else(color == "Red",red_bet,-red_bet),
        red_balance = begn_balance+cumsum(all_red))
 
  
@@ -198,16 +198,16 @@ spins %>% head(10)
 ```
 
     ##    spin_number color red_streak red_bet all_red red_balance
-    ## 1            1 Black          1       5      -5          95
-    ## 2            2   Red          2      10      20         115
-    ## 3            3 Black          1       5      -5         110
-    ## 4            4 Black          2      10     -10         100
-    ## 5            5 Black          3      20     -20          80
-    ## 6            6 Black          4      40     -40          40
-    ## 7            7   Red          5      80     160         200
-    ## 8            8   Red          1       5      10         210
-    ## 9            9   Red          1       5      10         220
-    ## 10          10 Green          1       5      -5         215
+    ## 1            1 Green          1       5      -5          95
+    ## 2            2 Black          2      10     -10          85
+    ## 3            3 Black          3      20     -20          65
+    ## 4            4 Black          4      40     -40          25
+    ## 5            5   Red          5      80      80         105
+    ## 6            6 Black          1       5      -5         100
+    ## 7            7 Black          2      10     -10          90
+    ## 8            8   Red          3      20      20         110
+    ## 9            9 Black          1       5      -5         105
+    ## 10          10 Green          2      10     -10          95
 
 ``` r
 ggplot(spins) +
@@ -224,18 +224,3 @@ ggplot(spins) +
 ```
 
 ![](Roulette_files/figure-gfm/unnamed-chunk-7-1.png)<!-- -->
-
-Maximum drawdown is -\$1,375 with a maximum wager of \$2,560 on the
-line.
-
-``` r
-summary(spins %>% select(red_bet,red_balance))
-```
-
-    ##     red_bet         red_balance   
-    ##  Min.   :   5.00   Min.   :-1255  
-    ##  1st Qu.:   5.00   1st Qu.: 4079  
-    ##  Median :  10.00   Median : 6402  
-    ##  Mean   :  32.85   Mean   : 5829  
-    ##  3rd Qu.:  20.00   3rd Qu.: 7942  
-    ##  Max.   :2560.00   Max.   :10065
