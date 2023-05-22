@@ -1,0 +1,150 @@
+---
+title: "Roulette Simulation and Statistics"
+output: rmarkdown::github_document
+---
+
+## Simulation Setup
+
+Starting by randomly selecting each color (with appropriate probability) to simulate 5000 spins of the wheel. Starting balance is \$100 and betting increment is \$5. The below table has all info used in the following few graphs.
+
+```{r}
+suppressMessages(library(tidyverse))
+
+bet_increment = 5
+begn_balance = 100
+
+spins = data.frame(
+spin_number = paste0(seq(1:5000))) %>% 
+mutate(color = sample(c("Black","Red","Green"),
+                       nrow(.),
+                       prob=c(.4734,.4734,.0532),
+                       replace=TRUE)
+       ) %>% 
+mutate(bet = bet_increment,
+       all_green = if_else(color == "Green",bet*17,-bet),
+       all_red = if_else(color == "Red",bet*2,-bet),
+       green_balance = begn_balance+cumsum(all_green),
+       red_balance = begn_balance+cumsum(all_red),
+       spin_number = as.integer(spin_number),
+       streak=sequence(rle(color)$lengths) - 1) %>% 
+  group_by(color) %>% mutate(freq = n())
+
+spins %>% head(10)
+```
+
+To ensure the random sampling is correct, the below graph shows the distribution of spins by color. This looks to be as expected.
+
+```{r}
+ggplot(spins %>% distinct(color,freq)) +
+  aes(x = reorder(color,-freq), y = freq, fill = color) +
+  geom_col() +
+  scale_fill_manual(
+    values = c(Black = "#000000",
+    Green = "#265209",
+    Red = "#9A1717")
+  ) +
+  labs(
+    x = "Color",
+    y = "Frequency",
+    title = "Spin Distribution"
+  ) +
+  theme_minimal() +
+   guides(fill="none")
+```
+
+A quick check of the consecutive spins for each color is as follows. Red and black decay at an expected rate for a random event, while the odds of the wheel landing on 2 greens in a row is \< 5%
+
+```{r}
+spins %>% 
+  group_by(color,streak) %>% 
+  summarise(spins = n()) %>% 
+  pivot_wider(names_from = color,values_from = spins,values_fill = 0) %>% 
+  janitor::adorn_percentages("col") %>% as_tibble() %>% round(2) %>% filter(streak < 6)
+```
+
+### Simulation 1 - Constant Amount
+
+The first simulation considers a constant bet for each spin. Here is \$5 for every spin for black and green.
+
+```{r}
+ggplot(spins %>% select(spin_number,green_balance,red_balance) %>%  pivot_longer(cols = contains("balance"))) +
+  aes(x = spin_number, y = value,group=name,color=name) +
+  geom_line() +
+    scale_color_manual(
+    values = c(`green_balance` = "darkgreen",
+               `red_balance` = "firebrick")) +
+  theme_minimal() +
+  geom_line(linewidth =1) +
+  scale_y_continuous(label=scales::dollar) +
+  guides(color="none") +
+  labs(
+    x = "Spins",
+    y = "Balance",
+    title = "$5 Every Spin"
+  )
+```
+
+### Simulation 2 - Martingale
+
+Martingale increases bet amounts after each loss where a win would offset all previous losses.
+
+Create doubling sequence...
+
+```{r}
+pascalTriangle <- function(h) {
+    lapply(0:h, function(i) choose(i, 0:i))
+}
+
+base_bet = 5
+
+triangle = unlist(lapply(pascalTriangle(25), sum)) %>% as.data.frame() %>% mutate(row_number()) %>% 
+  rename(factor_increase = 1,spin =2) %>% 
+  mutate(bet_amount = base_bet*factor_increase) %>% select(spin,bet_amount)
+
+triangle %>% head(10)
+```
+
+I'll simulate 100 spins of the wheel with the same beginning balance and betting increment as before.
+
+```{r}
+begn_balance = 100
+
+spins = data.frame(
+spin_number = paste0(seq(1:500))) %>% 
+mutate(color = sample(c("Black","Red","Green"),
+                       nrow(.),
+                       prob=c(.4734,.4734,.0532),
+                       replace=TRUE)
+       ) %>% 
+mutate(red_streak = coalesce(case_when(color == "Red" & lag(color) == "Red" ~ 1,
+                          color == "Red" & lag(color) != "Red" ~ lag(sequence(rle(color != "Red")$lengths)+1),
+                 color != "Red" ~ sequence(rle(color != "Red")$lengths)),1)
+       ) %>% 
+  left_join(triangle,by=c("red_streak"="spin")) %>% 
+  rename(red_bet = bet_amount) %>% 
+  mutate(all_red = if_else(color == "Red",red_bet*2,-red_bet),
+       red_balance = begn_balance+cumsum(all_red))
+
+ 
+spins %>% head(10)
+```
+
+```{r}
+ggplot(spins) +
+    aes(x = as.integer(spin_number), y = red_balance) +
+    geom_line(color = "firebrick",linewidth =1) +
+    theme_minimal() +
+  scale_y_continuous(label=scales::dollar) +
+  labs(
+    x = "Spins",
+    y = "Balance",
+    title = "Martingale Method",
+    subtitle = "Double Every Losing Bet on Every Spin"
+  )
+```
+
+Maximum drawdown is -\$1,375 with a maximum wager of \$2,560 on the line.
+
+```{r}
+summary(spins %>% select(red_bet,red_balance))
+```
