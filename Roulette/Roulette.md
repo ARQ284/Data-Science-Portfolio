@@ -53,15 +53,15 @@ spins %>% head(10)
     ##    spin_number color   bet all_green all_red all_black green_balance red_balance
     ##          <int> <chr> <dbl>     <dbl>   <dbl>     <dbl>         <dbl>       <dbl>
     ##  1           1 Red       5        -5       5        -5            95         105
-    ##  2           2 Black     5        -5      -5         5            90         100
-    ##  3           3 Black     5        -5      -5         5            85          95
-    ##  4           4 Red       5        -5       5        -5            80         100
-    ##  5           5 Black     5        -5      -5         5            75          95
-    ##  6           6 Red       5        -5       5        -5            70         100
-    ##  7           7 Red       5        -5       5        -5            65         105
-    ##  8           8 Red       5        -5       5        -5            60         110
-    ##  9           9 Black     5        -5      -5         5            55         105
-    ## 10          10 Black     5        -5      -5         5            50         100
+    ##  2           2 Red       5        -5       5        -5            90         110
+    ##  3           3 Red       5        -5       5        -5            85         115
+    ##  4           4 Red       5        -5       5        -5            80         120
+    ##  5           5 Red       5        -5       5        -5            75         125
+    ##  6           6 Black     5        -5      -5         5            70         120
+    ##  7           7 Red       5        -5       5        -5            65         125
+    ##  8           8 Black     5        -5      -5         5            60         120
+    ##  9           9 Black     5        -5      -5         5            55         115
+    ## 10          10 Red       5        -5       5        -5            50         120
     ## # ℹ 3 more variables: black_balance <dbl>, streak <dbl>, freq <int>
 
 To ensure the random sampling is valid, the below graph shows the
@@ -104,12 +104,12 @@ spins %>%
     ## # A tibble: 6 × 4
     ##   streak Black Green   Red
     ##    <dbl> <dbl> <dbl> <dbl>
-    ## 1      0  0.51  0.98  0.49
-    ## 2      1  0.26  0.02  0.26
-    ## 3      2  0.14  0     0.13
-    ## 4      3  0.06  0     0.06
-    ## 5      4  0.02  0     0.03
-    ## 6      5  0.01  0     0.02
+    ## 1      0  0.53  0.96  0.52
+    ## 2      1  0.24  0.04  0.26
+    ## 3      2  0.11  0     0.12
+    ## 4      3  0.04  0     0.06
+    ## 5      4  0.03  0     0.03
+    ## 6      5  0.02  0     0.01
 
 ### Simulation 1 - Constant Amount
 
@@ -199,17 +199,17 @@ mutate(streak = coalesce(case_when(color == "Red" & lag(color) == "Red" ~ 1,
 spins %>% head(10)
 ```
 
-    ##    spin_number color streak red_bet PL balance
-    ## 1            1 Black      1       4 -4     196
-    ## 2            2   Red      2       8  8     204
-    ## 3            3 Black      1       4 -4     200
-    ## 4            4   Red      2       8  8     208
-    ## 5            5   Red      1       4  4     212
-    ## 6            6 Green      1       4 -4     208
-    ## 7            7 Black      2       8 -8     200
-    ## 8            8   Red      3      16 16     216
-    ## 9            9 Black      1       4 -4     212
-    ## 10          10 Black      2       8 -8     204
+    ##    spin_number color streak red_bet  PL balance
+    ## 1            1 Black      1       4  -4     196
+    ## 2            2 Black      2       8  -8     188
+    ## 3            3   Red      3      16  16     204
+    ## 4            4 Black      1       4  -4     200
+    ## 5            5   Red      2       8   8     208
+    ## 6            6   Red      1       4   4     212
+    ## 7            7 Black      1       4  -4     208
+    ## 8            8 Green      2       8  -8     200
+    ## 9            9 Black      3      16 -16     184
+    ## 10          10   Red      4      32  32     216
 
 ``` r
 ggplot(spins) +
@@ -233,19 +233,32 @@ profit/loss
 
 ``` r
 spins %>% 
-  summarise(min_bet = min(red_bet),max_bet = max(red_bet),min_balance = min(balance),min_PL = min(PL),max_PL = max(PL)) %>% 
-  mutate(max_drawdown = begn_balance - min_balance) %>% pivot_longer(cols = everything())
+  summarise(`Max Bet` = max(red_bet),
+            `Minimum Balance` = min(balance),
+            `Largest Loss (Single Spin)` = min(PL),
+            `Largest Win (Single Spin)` = max(PL),
+            `Longest Unfavorable Run` = max(streak) - 1,
+            `Bet Amount - Median` = median(red_bet),
+            `Bet Amount - 75th Percentile` = quantile(red_bet,.75),
+            `Bet Amount - 95th Percentile` = quantile(red_bet,.95)
+            ) %>% 
+  mutate(`Max Drawdown` = -(begn_balance - `Minimum Balance`)) %>% 
+  pivot_longer(cols = everything()) %>%
+  rename(Metric = 1, Value = 2)
 ```
 
-    ## # A tibble: 6 × 2
-    ##   name         value
-    ##   <chr>        <dbl>
-    ## 1 min_bet          4
-    ## 2 max_bet        128
-    ## 3 min_balance    188
-    ## 4 min_PL         -64
-    ## 5 max_PL         128
-    ## 6 max_drawdown    12
+    ## # A tibble: 9 × 2
+    ##   Metric                       Value
+    ##   <chr>                        <dbl>
+    ## 1 Max Bet                        128
+    ## 2 Minimum Balance                160
+    ## 3 Largest Loss (Single Spin)     -64
+    ## 4 Largest Win (Single Spin)      128
+    ## 5 Longest Unfavorable Run          5
+    ## 6 Bet Amount - Median              8
+    ## 7 Bet Amount - 75th Percentile    16
+    ## 8 Bet Amount - 95th Percentile    64
+    ## 9 Max Drawdown                   -40
 
 ### Simulation 3 - Fibonacci
 
@@ -308,17 +321,17 @@ mutate(streak = coalesce(case_when(color == "Red" & lag(color) == "Red" ~ 1,
 spins %>% head(10)
 ```
 
-    ##    spin_number color streak red_bet rolling_fib_amt PL balance
-    ## 1            1   Red      1       5               5  5     205
-    ## 2            2 Black      1       5               5 -5     200
-    ## 3            3 Black      2       5              10 -5     195
-    ## 4            4   Red      3      10              20 10     205
-    ## 5            5   Red      1       5               5  5     210
-    ## 6            6   Red      1       5               5  5     215
-    ## 7            7 Black      1       5               5 -5     210
-    ## 8            8   Red      2       5              10  5     215
-    ## 9            9   Red      1       5               5  5     220
-    ## 10          10 Black      1       5               5 -5     215
+    ##    spin_number color streak red_bet rolling_fib_amt  PL balance
+    ## 1            1   Red      1       5               5   5     205
+    ## 2            2   Red      1       5               5   5     210
+    ## 3            3 Black      1       5               5  -5     205
+    ## 4            4 Black      2       5              10  -5     200
+    ## 5            5 Black      3      10              20 -10     190
+    ## 6            6   Red      4      15              35  15     205
+    ## 7            7   Red      1       5               5   5     210
+    ## 8            8 Green      1       5               5  -5     205
+    ## 9            9   Red      2       5              10   5     210
+    ## 10          10 Black      1       5               5  -5     205
 
 ``` r
 ggplot(spins) +
@@ -336,6 +349,38 @@ ggplot(spins) +
 ```
 
 ![](Roulette_files/figure-gfm/unnamed-chunk-11-1.png)<!-- -->
+
+Show summary stats for bets, running balance, and single spin
+profit/loss
+
+``` r
+spins %>% 
+  summarise(`Max Bet` = max(red_bet),
+            `Minimum Balance` = min(balance),
+            `Largest Loss (Single Spin)` = min(PL),
+            `Largest Win (Single Spin)` = max(PL),
+            `Longest Unfavorable Run` = max(streak) - 1,
+            `Bet Amount - Median` = median(red_bet),
+            `Bet Amount - 75th Percentile` = quantile(red_bet,.75),
+            `Bet Amount - 95th Percentile` = quantile(red_bet,.95)
+            ) %>% 
+  mutate(`Max Drawdown` = -(begn_balance - `Minimum Balance`)) %>% 
+  pivot_longer(cols = everything()) %>%
+  rename(Metric = 1, Value = 2)
+```
+
+    ## # A tibble: 9 × 2
+    ##   Metric                        Value
+    ##   <chr>                         <dbl>
+    ## 1 Max Bet                       1165 
+    ## 2 Minimum Balance              -1670 
+    ## 3 Largest Loss (Single Spin)    -720 
+    ## 4 Largest Win (Single Spin)     1165 
+    ## 5 Longest Unfavorable Run         12 
+    ## 6 Bet Amount - Median              5 
+    ## 7 Bet Amount - 75th Percentile    10 
+    ## 8 Bet Amount - 95th Percentile   108.
+    ## 9 Max Drawdown                 -1870
 
 ### Simulation 4 - Consecutive Color Contrarian
 
@@ -377,17 +422,17 @@ mutate(prev_run = lag(streak),
 spins %>% head(10)
 ```
 
-    ##    spin_number color streak prev_run  PL balance
-    ## 1            1 Black      0        0   0     200
-    ## 2            2 Black      1        0   0     200
-    ## 3            3 Black      2        1   0     200
-    ## 4            4 Black      3        2 -10     190
-    ## 5            5   Red      0        3   9     199
-    ## 6            6 Black      0        0   0     199
-    ## 7            7   Red      0        0   0     199
-    ## 8            8 Black      0        0   0     199
-    ## 9            9 Black      1        0   0     199
-    ## 10          10   Red      0        1   0     199
+    ##    spin_number color streak prev_run PL balance
+    ## 1            1 Green      0        0  0     200
+    ## 2            2 Black      0        0  0     200
+    ## 3            3   Red      0        0  0     200
+    ## 4            4 Black      0        0  0     200
+    ## 5            5   Red      0        0  0     200
+    ## 6            6 Green      0        0  0     200
+    ## 7            7   Red      0        0  0     200
+    ## 8            8 Green      0        0  0     200
+    ## 9            9 Black      0        0  0     200
+    ## 10          10 Green      0        0  0     200
 
 ``` r
 ggplot(spins) +
@@ -404,4 +449,4 @@ ggplot(spins) +
   )
 ```
 
-![](Roulette_files/figure-gfm/unnamed-chunk-13-1.png)<!-- -->
+![](Roulette_files/figure-gfm/unnamed-chunk-14-1.png)<!-- -->

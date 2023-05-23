@@ -92,6 +92,7 @@ ggplot(spins %>% select(spin_number,green_balance,red_balance,black_balance) %>%
 Martingale increases bet amounts after each loss where a win would offset all previous losses.
 
 First, I create the doubling sequence.
+
 ```{r}
 pascalTriangle <- function(h) {
     lapply(0:h, function(i) choose(i, 0:i))
@@ -106,7 +107,8 @@ triangle = unlist(lapply(pascalTriangle(25), sum)) %>% as.data.frame() %>% mutat
 triangle %>% head(10)
 ```
 
-I'll simulate 100 spins of the wheel with a beginning balance of $200 and a $4 baseline bet (2% of total - the 2% ratio seems to be the best balance of risk/reward).
+I'll simulate 100 spins of the wheel with a beginning balance of \$200 and a \$4 baseline bet (2% of total - the 2% ratio seems to be the best balance of risk/reward).
+
 ```{r}
 begn_balance = 200
 
@@ -148,12 +150,24 @@ ggplot(spins) +
 Show summary stats for bets, running balance, and single spin profit/loss
 ```{r}
 spins %>% 
-  summarise(min_bet = min(red_bet),max_bet = max(red_bet),min_balance = min(balance),min_PL = min(PL),max_PL = max(PL)) %>% 
-  mutate(max_drawdown = begn_balance - min_balance) %>% pivot_longer(cols = everything())
+  summarise(`Max Bet` = max(red_bet),
+            `Minimum Balance` = min(balance),
+            `Largest Loss (Single Spin)` = min(PL),
+            `Largest Win (Single Spin)` = max(PL),
+            `Longest Unfavorable Run` = max(streak) - 1,
+            `Bet Amount - Median` = median(red_bet),
+            `Bet Amount - 75th Percentile` = quantile(red_bet,.75),
+            `Bet Amount - 95th Percentile` = quantile(red_bet,.95)
+            ) %>% 
+  mutate(`Max Drawdown` = -(begn_balance - `Minimum Balance`)) %>% 
+  pivot_longer(cols = everything()) %>%
+  rename(Metric = 1, Value = 2)
 ```
+
 ### Simulation 3 - Fibonacci
 
 Create Fibonacci sequence; each number is the sum of the two preceding values.
+
 ```{r}
 base_bet = 5
 
@@ -193,7 +207,6 @@ mutate(streak = coalesce(case_when(color == "Red" & lag(color) == "Red" ~ 1,
 spins %>% head(10)
 ```
 
-
 ```{r}
 ggplot(spins) +
     aes(x = as.integer(spin_number), y = balance) +
@@ -209,10 +222,30 @@ ggplot(spins) +
   )
 ```
 
+Show summary stats for bets, running balance, and single spin profit/loss
+```{r}
+spins %>% 
+  summarise(`Max Bet` = max(red_bet),
+            `Minimum Balance` = min(balance),
+            `Largest Loss (Single Spin)` = min(PL),
+            `Largest Win (Single Spin)` = max(PL),
+            `Longest Unfavorable Run` = max(streak) - 1,
+            `Bet Amount - Median` = median(red_bet),
+            `Bet Amount - 75th Percentile` = quantile(red_bet,.75),
+            `Bet Amount - 95th Percentile` = quantile(red_bet,.95)
+            ) %>% 
+  mutate(`Max Drawdown` = -(begn_balance - `Minimum Balance`)) %>% 
+  pivot_longer(cols = everything()) %>%
+  rename(Metric = 1, Value = 2)
+```
+
+
 ### Simulation 4 - Consecutive Color Contrarian
+
 If the spins are truly random, any run of more than two (zero being the beginning of a new trend), has very low odds. Below table simulates betting the opposite color on streaks greater than 1. No action is taken when green appears more than once.
 
-This method involves taking a betting increment and allocating 90% to the inverse color and 10% to green as "insurance". In this case I use a $10 increment; $9 is allotted to the inverse color of the streak, and $1 is allocated to green. I made this simulation for 1,000 spins instead of 100 considered bets aren't taking place on most spins.
+This method involves taking a betting increment and allocating 90% to the inverse color and 10% to green as "insurance". In this case I use a \$10 increment; \$9 is allotted to the inverse color of the streak, and \$1 is allocated to green. I made this simulation for 1,000 spins instead of 100 considered bets aren't taking place on most spins.
+
 ```{r}
 increment = 10
 
@@ -239,7 +272,6 @@ mutate(prev_run = lag(streak),
 
 spins %>% head(10)
 ```
-
 
 ```{r}
 ggplot(spins) +
