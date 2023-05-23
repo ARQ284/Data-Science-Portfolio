@@ -186,8 +186,7 @@ mutate(red_streak = coalesce(case_when(color == "Red" & lag(color) == "Red" ~ 1,
   mutate(all_red = if_else(color == "Red",red_bet,-red_bet),
        red_balance = begn_balance+cumsum(all_red))
 
- 
-spins
+spins %>% head(10)
 ```
 
 
@@ -234,7 +233,7 @@ mutate(prev_run = lag(streak),
   replace(is.na(.), 0) %>% 
   mutate(balance = begn_balance+cumsum(PL))
 
-spins
+spins %>% head(10)
 ```
 
 
