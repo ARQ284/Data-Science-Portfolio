@@ -23,8 +23,10 @@ mutate(color = sample(c("Black","Red","Green"),
 mutate(bet = bet_increment,
        all_green = if_else(color == "Green",bet*17,-bet),
        all_red = if_else(color == "Red",bet,-bet),
+       all_black = if_else(color == "Black",bet,-bet),
        green_balance = begn_balance+cumsum(all_green),
        red_balance = begn_balance+cumsum(all_red),
+       black_balance = begn_balance+cumsum(all_black),
        spin_number = as.integer(spin_number),
        streak=sequence(rle(color)$lengths) - 1) %>% 
   group_by(color) %>% mutate(freq = n())
@@ -67,12 +69,13 @@ spins %>%
 The first simulation considers a constant bet for each spin. Here is \$5 for every spin for black and green.
 
 ```{r}
-ggplot(spins %>% select(spin_number,green_balance,red_balance) %>%  pivot_longer(cols = contains("balance"))) +
+ggplot(spins %>% select(spin_number,green_balance,red_balance,black_balance) %>%  pivot_longer(cols = contains("balance"))) +
   aes(x = spin_number, y = value,group=name,color=name) +
   geom_line() +
     scale_color_manual(
     values = c(`green_balance` = "darkgreen",
-               `red_balance` = "firebrick")) +
+               `red_balance` = "firebrick",
+               `black_balance` = "black")) +
   theme_minimal() +
   geom_line(linewidth =1) +
   scale_y_continuous(label=scales::dollar) +
@@ -80,7 +83,7 @@ ggplot(spins %>% select(spin_number,green_balance,red_balance) %>%  pivot_longer
   labs(
     x = "Spins",
     y = "Balance",
-    title = "$5 Every Spin"
+    title = "$5 Every Spin - All Colors"
   )
 ```
 
@@ -88,7 +91,7 @@ ggplot(spins %>% select(spin_number,green_balance,red_balance) %>%  pivot_longer
 
 Martingale increases bet amounts after each loss where a win would offset all previous losses.
 
-Create the doubling sequence...
+First, I create the doubling sequence.
 ```{r}
 pascalTriangle <- function(h) {
     lapply(0:h, function(i) choose(i, 0:i))
@@ -144,7 +147,9 @@ ggplot(spins) +
 
 Show summary stats for bets, running balance, and single spin profit/loss
 ```{r}
-summary(spins %>% select(red_bet,balance,PL))
+spins %>% 
+  summarise(min_bet = min(red_bet),max_bet = max(red_bet),min_balance = min(balance),min_PL = min(PL),max_PL = max(PL)) %>% 
+  mutate(max_drawdown = begn_balance - min_balance) %>% pivot_longer(cols = everything())
 ```
 ### Simulation 3 - Fibonacci
 
@@ -176,14 +181,14 @@ mutate(color = sample(c("Black","Red","Green"),
                        prob=c(.4734,.4734,.0532),
                        replace=TRUE)
        ) %>% 
-mutate(red_streak = coalesce(case_when(color == "Red" & lag(color) == "Red" ~ 1,
+mutate(streak = coalesce(case_when(color == "Red" & lag(color) == "Red" ~ 1,
                           color == "Red" & lag(color) != "Red" ~ lag(sequence(rle(color != "Red")$lengths)+1),
                  color != "Red" ~ sequence(rle(color != "Red")$lengths)),1)
        ) %>% 
-  left_join(fib,by=c("red_streak"="spin")) %>% 
+  left_join(fib,by=c("streak"="spin")) %>% 
   rename(red_bet = bet_amount) %>% 
-  mutate(all_red = if_else(color == "Red",red_bet,-red_bet),
-       red_balance = begn_balance+cumsum(all_red))
+  mutate(PL = if_else(color == "Red",red_bet,-red_bet),
+       balance = begn_balance+cumsum(PL))
 
 spins %>% head(10)
 ```
@@ -191,7 +196,7 @@ spins %>% head(10)
 
 ```{r}
 ggplot(spins) +
-    aes(x = as.integer(spin_number), y = red_balance) +
+    aes(x = as.integer(spin_number), y = balance) +
     geom_line(color = "firebrick",linewidth =1) +
     theme_minimal() +
   scale_y_continuous(label=scales::dollar) +

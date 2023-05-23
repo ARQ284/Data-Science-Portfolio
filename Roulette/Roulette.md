@@ -37,8 +37,10 @@ mutate(color = sample(c("Black","Red","Green"),
 mutate(bet = bet_increment,
        all_green = if_else(color == "Green",bet*17,-bet),
        all_red = if_else(color == "Red",bet,-bet),
+       all_black = if_else(color == "Black",bet,-bet),
        green_balance = begn_balance+cumsum(all_green),
        red_balance = begn_balance+cumsum(all_red),
+       black_balance = begn_balance+cumsum(all_black),
        spin_number = as.integer(spin_number),
        streak=sequence(rle(color)$lengths) - 1) %>% 
   group_by(color) %>% mutate(freq = n())
@@ -46,21 +48,21 @@ mutate(bet = bet_increment,
 spins %>% head(10)
 ```
 
-    ## # A tibble: 10 × 9
+    ## # A tibble: 10 × 11
     ## # Groups:   color [2]
-    ##    spin_number color   bet all_green all_red green_balance red_balance streak
-    ##          <int> <chr> <dbl>     <dbl>   <dbl>         <dbl>       <dbl>  <dbl>
-    ##  1           1 Black     5        -5      -5            95          95      0
-    ##  2           2 Red       5        -5       5            90         100      0
-    ##  3           3 Black     5        -5      -5            85          95      0
-    ##  4           4 Black     5        -5      -5            80          90      1
-    ##  5           5 Red       5        -5       5            75          95      0
-    ##  6           6 Black     5        -5      -5            70          90      0
-    ##  7           7 Red       5        -5       5            65          95      0
-    ##  8           8 Black     5        -5      -5            60          90      0
-    ##  9           9 Black     5        -5      -5            55          85      1
-    ## 10          10 Red       5        -5       5            50          90      0
-    ## # ℹ 1 more variable: freq <int>
+    ##    spin_number color   bet all_green all_red all_black green_balance red_balance
+    ##          <int> <chr> <dbl>     <dbl>   <dbl>     <dbl>         <dbl>       <dbl>
+    ##  1           1 Red       5        -5       5        -5            95         105
+    ##  2           2 Black     5        -5      -5         5            90         100
+    ##  3           3 Black     5        -5      -5         5            85          95
+    ##  4           4 Red       5        -5       5        -5            80         100
+    ##  5           5 Black     5        -5      -5         5            75          95
+    ##  6           6 Red       5        -5       5        -5            70         100
+    ##  7           7 Red       5        -5       5        -5            65         105
+    ##  8           8 Red       5        -5       5        -5            60         110
+    ##  9           9 Black     5        -5      -5         5            55         105
+    ## 10          10 Black     5        -5      -5         5            50         100
+    ## # ℹ 3 more variables: black_balance <dbl>, streak <dbl>, freq <int>
 
 To ensure the random sampling is valid, the below graph shows the
 distribution of spins by color. This looks to be as expected.
@@ -102,12 +104,12 @@ spins %>%
     ## # A tibble: 6 × 4
     ##   streak Black Green   Red
     ##    <dbl> <dbl> <dbl> <dbl>
-    ## 1      0  0.51  0.97  0.55
-    ## 2      1  0.25  0.03  0.26
-    ## 3      2  0.12  0     0.1 
-    ## 4      3  0.06  0     0.05
-    ## 5      4  0.03  0     0.02
-    ## 6      5  0.01  0     0.01
+    ## 1      0  0.51  0.98  0.49
+    ## 2      1  0.26  0.02  0.26
+    ## 3      2  0.14  0     0.13
+    ## 4      3  0.06  0     0.06
+    ## 5      4  0.02  0     0.03
+    ## 6      5  0.01  0     0.02
 
 ### Simulation 1 - Constant Amount
 
@@ -115,12 +117,13 @@ The first simulation considers a constant bet for each spin. Here is \$5
 for every spin for black and green.
 
 ``` r
-ggplot(spins %>% select(spin_number,green_balance,red_balance) %>%  pivot_longer(cols = contains("balance"))) +
+ggplot(spins %>% select(spin_number,green_balance,red_balance,black_balance) %>%  pivot_longer(cols = contains("balance"))) +
   aes(x = spin_number, y = value,group=name,color=name) +
   geom_line() +
     scale_color_manual(
     values = c(`green_balance` = "darkgreen",
-               `red_balance` = "firebrick")) +
+               `red_balance` = "firebrick",
+               `black_balance` = "black")) +
   theme_minimal() +
   geom_line(linewidth =1) +
   scale_y_continuous(label=scales::dollar) +
@@ -128,7 +131,7 @@ ggplot(spins %>% select(spin_number,green_balance,red_balance) %>%  pivot_longer
   labs(
     x = "Spins",
     y = "Balance",
-    title = "$5 Every Spin"
+    title = "$5 Every Spin - All Colors"
   )
 ```
 
@@ -141,7 +144,7 @@ ggplot(spins %>% select(spin_number,green_balance,red_balance) %>%  pivot_longer
 Martingale increases bet amounts after each loss where a win would
 offset all previous losses.
 
-Create the doubling sequence…
+First, I create the doubling sequence.
 
 ``` r
 pascalTriangle <- function(h) {
@@ -196,17 +199,17 @@ mutate(streak = coalesce(case_when(color == "Red" & lag(color) == "Red" ~ 1,
 spins %>% head(10)
 ```
 
-    ##    spin_number color streak red_bet  PL balance
-    ## 1            1 Black      1       4  -4     196
-    ## 2            2 Black      2       8  -8     188
-    ## 3            3   Red      3      16  16     204
-    ## 4            4   Red      1       4   4     208
-    ## 5            5 Black      1       4  -4     204
-    ## 6            6   Red      2       8   8     212
-    ## 7            7 Black      1       4  -4     208
-    ## 8            8 Black      2       8  -8     200
-    ## 9            9 Black      3      16 -16     184
-    ## 10          10   Red      4      32  32     216
+    ##    spin_number color streak red_bet PL balance
+    ## 1            1 Black      1       4 -4     196
+    ## 2            2   Red      2       8  8     204
+    ## 3            3 Black      1       4 -4     200
+    ## 4            4   Red      2       8  8     208
+    ## 5            5   Red      1       4  4     212
+    ## 6            6 Green      1       4 -4     208
+    ## 7            7 Black      2       8 -8     200
+    ## 8            8   Red      3      16 16     216
+    ## 9            9 Black      1       4 -4     212
+    ## 10          10 Black      2       8 -8     204
 
 ``` r
 ggplot(spins) +
@@ -229,16 +232,20 @@ Show summary stats for bets, running balance, and single spin
 profit/loss
 
 ``` r
-summary(spins %>% select(red_bet,balance,PL))
+spins %>% 
+  summarise(min_bet = min(red_bet),max_bet = max(red_bet),min_balance = min(balance),min_PL = min(PL),max_PL = max(PL)) %>% 
+  mutate(max_drawdown = begn_balance - min_balance) %>% pivot_longer(cols = everything())
 ```
 
-    ##     red_bet         balance            PL        
-    ##  Min.   : 4.00   Min.   :184.0   Min.   :-16.00  
-    ##  1st Qu.: 4.00   1st Qu.:244.0   1st Qu.: -4.00  
-    ##  Median : 6.00   Median :302.0   Median : -4.00  
-    ##  Mean   : 8.08   Mean   :297.6   Mean   :  1.84  
-    ##  3rd Qu.: 8.00   3rd Qu.:352.0   3rd Qu.:  8.00  
-    ##  Max.   :32.00   Max.   :396.0   Max.   : 32.00
+    ## # A tibble: 6 × 2
+    ##   name         value
+    ##   <chr>        <dbl>
+    ## 1 min_bet          4
+    ## 2 max_bet        128
+    ## 3 min_balance    188
+    ## 4 min_PL         -64
+    ## 5 max_PL         128
+    ## 6 max_drawdown    12
 
 ### Simulation 3 - Fibonacci
 
@@ -289,33 +296,33 @@ mutate(color = sample(c("Black","Red","Green"),
                        prob=c(.4734,.4734,.0532),
                        replace=TRUE)
        ) %>% 
-mutate(red_streak = coalesce(case_when(color == "Red" & lag(color) == "Red" ~ 1,
+mutate(streak = coalesce(case_when(color == "Red" & lag(color) == "Red" ~ 1,
                           color == "Red" & lag(color) != "Red" ~ lag(sequence(rle(color != "Red")$lengths)+1),
                  color != "Red" ~ sequence(rle(color != "Red")$lengths)),1)
        ) %>% 
-  left_join(fib,by=c("red_streak"="spin")) %>% 
+  left_join(fib,by=c("streak"="spin")) %>% 
   rename(red_bet = bet_amount) %>% 
-  mutate(all_red = if_else(color == "Red",red_bet,-red_bet),
-       red_balance = begn_balance+cumsum(all_red))
+  mutate(PL = if_else(color == "Red",red_bet,-red_bet),
+       balance = begn_balance+cumsum(PL))
 
 spins %>% head(10)
 ```
 
-    ##    spin_number color red_streak red_bet rolling_fib_amt all_red red_balance
-    ## 1            1 Black          1       5               5      -5         195
-    ## 2            2   Red          2       5              10       5         200
-    ## 3            3   Red          1       5               5       5         205
-    ## 4            4   Red          1       5               5       5         210
-    ## 5            5 Black          1       5               5      -5         205
-    ## 6            6 Black          2       5              10      -5         200
-    ## 7            7   Red          3      10              20      10         210
-    ## 8            8 Black          1       5               5      -5         205
-    ## 9            9 Black          2       5              10      -5         200
-    ## 10          10   Red          3      10              20      10         210
+    ##    spin_number color streak red_bet rolling_fib_amt PL balance
+    ## 1            1   Red      1       5               5  5     205
+    ## 2            2 Black      1       5               5 -5     200
+    ## 3            3 Black      2       5              10 -5     195
+    ## 4            4   Red      3      10              20 10     205
+    ## 5            5   Red      1       5               5  5     210
+    ## 6            6   Red      1       5               5  5     215
+    ## 7            7 Black      1       5               5 -5     210
+    ## 8            8   Red      2       5              10  5     215
+    ## 9            9   Red      1       5               5  5     220
+    ## 10          10 Black      1       5               5 -5     215
 
 ``` r
 ggplot(spins) +
-    aes(x = as.integer(spin_number), y = red_balance) +
+    aes(x = as.integer(spin_number), y = balance) +
     geom_line(color = "firebrick",linewidth =1) +
     theme_minimal() +
   scale_y_continuous(label=scales::dollar) +
@@ -371,16 +378,16 @@ spins %>% head(10)
 ```
 
     ##    spin_number color streak prev_run  PL balance
-    ## 1            1   Red      0        0   0     200
-    ## 2            2   Red      1        0   0     200
-    ## 3            3 Black      0        1   0     200
-    ## 4            4 Black      1        0   0     200
-    ## 5            5 Black      2        1   0     200
-    ## 6            6 Black      3        2 -10     190
-    ## 7            7 Black      4        3 -10     180
-    ## 8            8 Black      5        4 -10     170
-    ## 9            9   Red      0        5   9     179
-    ## 10          10 Black      0        0   0     179
+    ## 1            1 Black      0        0   0     200
+    ## 2            2 Black      1        0   0     200
+    ## 3            3 Black      2        1   0     200
+    ## 4            4 Black      3        2 -10     190
+    ## 5            5   Red      0        3   9     199
+    ## 6            6 Black      0        0   0     199
+    ## 7            7   Red      0        0   0     199
+    ## 8            8 Black      0        0   0     199
+    ## 9            9 Black      1        0   0     199
+    ## 10          10   Red      0        1   0     199
 
 ``` r
 ggplot(spins) +
