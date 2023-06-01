@@ -87,8 +87,7 @@ ggplot(spins %>% distinct(color,freq)) +
 
 ![](Roulette_files/figure-gfm/unnamed-chunk-2-1.png)<!-- -->
 
-A quick check of the consecutive spins for each color is as follows. Red
-and black decay at an expected rate for a random event.
+A quick check of the consecutive spins for each color is as follows.
 
 ``` r
 spins %>% 
@@ -114,7 +113,7 @@ spins %>%
 ### Simulation 1 - Constant Amount
 
 The first simulation considers a constant bet for each spin. Here is \$5
-for every spin for black and green.
+for every spin for each color.
 
 ``` r
 ggplot(spins %>% select(spin_number,green_balance,red_balance,black_balance) %>%  pivot_longer(cols = contains("balance"))) +
