@@ -52,14 +52,14 @@ spins %>% head(10)
     ## # Groups:   color [2]
     ##    spin_number color   bet all_green all_red all_black green_balance red_balance
     ##          <int> <chr> <dbl>     <dbl>   <dbl>     <dbl>         <dbl>       <dbl>
-    ##  1           1 Black     5        -5      -5         5            95          95
-    ##  2           2 Black     5        -5      -5         5            90          90
-    ##  3           3 Red       5        -5       5        -5            85          95
-    ##  4           4 Black     5        -5      -5         5            80          90
-    ##  5           5 Red       5        -5       5        -5            75          95
-    ##  6           6 Red       5        -5       5        -5            70         100
-    ##  7           7 Red       5        -5       5        -5            65         105
-    ##  8           8 Black     5        -5      -5         5            60         100
+    ##  1           1 Red       5        -5       5        -5            95         105
+    ##  2           2 Red       5        -5       5        -5            90         110
+    ##  3           3 Black     5        -5      -5         5            85         105
+    ##  4           4 Black     5        -5      -5         5            80         100
+    ##  5           5 Black     5        -5      -5         5            75          95
+    ##  6           6 Black     5        -5      -5         5            70          90
+    ##  7           7 Red       5        -5       5        -5            65          95
+    ##  8           8 Red       5        -5       5        -5            60         100
     ##  9           9 Red       5        -5       5        -5            55         105
     ## 10          10 Black     5        -5      -5         5            50         100
     ## # ℹ 3 more variables: black_balance <dbl>, streak <dbl>, freq <int>
@@ -104,14 +104,14 @@ spins %>%
     ## # A tibble: 10 × 4
     ##    streak Black Green   Red
     ##     <dbl> <dbl> <dbl> <dbl>
-    ##  1      0  0.5   0.97  0.51
-    ##  2      1  0.26  0.03  0.23
-    ##  3      2  0.12  0     0.12
-    ##  4      3  0.05  0     0.06
-    ##  5      4  0.03  0     0.04
-    ##  6      5  0.02  0     0.02
-    ##  7      6  0.01  0     0.01
-    ##  8      7  0     0     0.01
+    ##  1      0  0.56  0.97  0.53
+    ##  2      1  0.25  0.02  0.25
+    ##  3      2  0.11  0.02  0.12
+    ##  4      3  0.04  0     0.06
+    ##  5      4  0.02  0     0.02
+    ##  6      5  0.01  0     0.01
+    ##  7      6  0     0     0   
+    ##  8      7  0     0     0   
     ##  9      8  0     0     0   
     ## 10      9  0     0     0
 
@@ -203,13 +203,13 @@ spins %>% head(10)
 ```
 
     ##    spin_number color streak red_bet PL balance
-    ## 1            1 Black      1       4 -4     196
-    ## 2            2   Red      2       8  8     204
-    ## 3            3 Black      1       4 -4     200
-    ## 4            4 Black      2       8 -8     192
-    ## 5            5   Red      3      16 16     208
-    ## 6            6   Red      1       4  4     212
-    ## 7            7   Red      1       4  4     216
+    ## 1            1   Red      1       4  4     204
+    ## 2            2 Black      1       4 -4     200
+    ## 3            3   Red      2       8  8     208
+    ## 4            4 Black      1       4 -4     204
+    ## 5            5   Red      2       8  8     212
+    ## 6            6 Green      1       4 -4     208
+    ## 7            7   Red      2       8  8     216
     ## 8            8   Red      1       4  4     220
     ## 9            9 Black      1       4 -4     216
     ## 10          10 Black      2       8 -8     208
@@ -251,17 +251,17 @@ spins %>%
 ```
 
     ## # A tibble: 9 × 2
-    ##   Metric                        Value
-    ##   <chr>                         <dbl>
-    ## 1 Max Bet                       256  
-    ## 2 Minimum Balance                56  
-    ## 3 Largest Loss (Single Spin)   -128  
-    ## 4 Largest Win (Single Spin)     256  
-    ## 5 Longest Unfavorable Run         6  
-    ## 6 Bet Amount - Median             8  
-    ## 7 Bet Amount - 75th Percentile   16  
-    ## 8 Bet Amount - 95th Percentile   67.2
-    ## 9 Max Drawdown                 -144
+    ##   Metric                       Value
+    ##   <chr>                        <dbl>
+    ## 1 Max Bet                        128
+    ## 2 Minimum Balance                184
+    ## 3 Largest Loss (Single Spin)     -64
+    ## 4 Largest Win (Single Spin)      128
+    ## 5 Longest Unfavorable Run          5
+    ## 6 Bet Amount - Median              6
+    ## 7 Bet Amount - 75th Percentile     8
+    ## 8 Bet Amount - 95th Percentile    32
+    ## 9 Max Drawdown                   -16
 
 ### Simulation 3 - Fibonacci
 
@@ -330,16 +330,16 @@ spins %>% head(10)
 ```
 
     ##    spin_number color streak red_bet rolling_fib_amt PL balance
-    ## 1            1 Black      1       5               5 -5     195
-    ## 2            2   Red      2       5              10  5     200
-    ## 3            3 Black      1       5               5 -5     195
-    ## 4            4   Red      2       5              10  5     200
-    ## 5            5   Red      1       5               5  5     205
+    ## 1            1   Red      1       5               5  5     205
+    ## 2            2 Black      1       5               5 -5     200
+    ## 3            3   Red      2       5              10  5     205
+    ## 4            4 Black      1       5               5 -5     200
+    ## 5            5   Red      2       5              10  5     205
     ## 6            6 Black      1       5               5 -5     200
-    ## 7            7 Black      2       5              10 -5     195
-    ## 8            8   Red      3      10              20 10     205
-    ## 9            9 Black      1       5               5 -5     200
-    ## 10          10 Black      2       5              10 -5     195
+    ## 7            7   Red      2       5              10  5     205
+    ## 8            8   Red      1       5               5  5     210
+    ## 9            9   Red      1       5               5  5     215
+    ## 10          10 Green      1       5               5 -5     210
 
 ``` r
 ggplot(spins) +
@@ -378,24 +378,24 @@ spins %>%
 ```
 
     ## # A tibble: 9 × 2
-    ##   Metric                         Value
-    ##   <chr>                          <dbl>
-    ## 1 Max Bet                       105   
-    ## 2 Minimum Balance                40   
-    ## 3 Largest Loss (Single Spin)    -65   
-    ## 4 Largest Win (Single Spin)     105   
-    ## 5 Longest Unfavorable Run         7   
-    ## 6 Bet Amount - Median             5   
-    ## 7 Bet Amount - 75th Percentile    6.25
-    ## 8 Bet Amount - 95th Percentile   15.5 
-    ## 9 Max Drawdown                 -160
+    ##   Metric                       Value
+    ##   <chr>                        <dbl>
+    ## 1 Max Bet                       40  
+    ## 2 Minimum Balance              200  
+    ## 3 Largest Loss (Single Spin)   -25  
+    ## 4 Largest Win (Single Spin)     40  
+    ## 5 Longest Unfavorable Run        5  
+    ## 6 Bet Amount - Median            5  
+    ## 7 Bet Amount - 75th Percentile   5  
+    ## 8 Bet Amount - 95th Percentile  10.2
+    ## 9 Max Drawdown                   0
 
 ### Simulation 4 - Martindale & Consecutive Color Contrarian
 
 This method combines the Martingale strategy with betting against the
 trend. After 2 colors appear in a row, a bet is placed on the opposite
 color for \$20, and increases in a doubling sequence (per the Martingale
-strategy). 100 spins simulated below with a starting balance of \$500.
+strategy). 200 spins simulated below with a starting balance of \$500.
 
 ``` r
 pascalTriangle <- function(h) {
@@ -403,8 +403,9 @@ pascalTriangle <- function(h) {
 }
 
 base_bet = 20
+adjustment_start_spins = 1
 
-triangle = unlist(lapply(pascalTriangle(25), sum)) %>% as.data.frame() %>% mutate(row_number()) %>% 
+triangle = unlist(lapply(pascalTriangle(25), sum)) %>% as.data.frame() %>% mutate(row_number()+adjustment_start_spins) %>% 
   rename(factor_increase = 1,spin =2) %>% 
   mutate(bet_amount = base_bet*factor_increase) %>% select(spin,bet_amount)
 
@@ -412,22 +413,22 @@ triangle %>% head(10)
 ```
 
     ##    spin bet_amount
-    ## 1     1         20
-    ## 2     2         40
-    ## 3     3         80
-    ## 4     4        160
-    ## 5     5        320
-    ## 6     6        640
-    ## 7     7       1280
-    ## 8     8       2560
-    ## 9     9       5120
-    ## 10   10      10240
+    ## 1     2         20
+    ## 2     3         40
+    ## 3     4         80
+    ## 4     5        160
+    ## 5     6        320
+    ## 6     7        640
+    ## 7     8       1280
+    ## 8     9       2560
+    ## 9    10       5120
+    ## 10   11      10240
 
 ``` r
 begn_balance = 500
 
 spins = data.frame(
-spin_number = paste0(seq(1:100))) %>% 
+spin_number = paste0(seq(1:200))) %>% 
 mutate(color = sample(c("Black","Red","Green"),
                        nrow(.),
                        prob=c(.4734,.4734,.0532),
@@ -446,17 +447,17 @@ mutate(prev_run = lag(streak),
 spins %>% head(10)
 ```
 
-    ##    spin_number color streak prev_run action bet_amount  PL balance
-    ## 1            1 Black      0        0 No Bet         NA  NA     500
-    ## 2            2 Black      1        0 No Bet         NA  NA     500
-    ## 3            3 Black      2        1 No Bet         20 -20     480
-    ## 4            4   Red      0        2    Bet         40  40     520
-    ## 5            5 Black      0        0 No Bet         NA  NA     520
-    ## 6            6 Black      1        0 No Bet         NA  NA     520
-    ## 7            7 Black      2        1 No Bet         20 -20     500
-    ## 8            8 Green      0        2    Bet         40  40     540
-    ## 9            9   Red      0        0 No Bet         NA  NA     540
-    ## 10          10 Black      0        0 No Bet         NA  NA     540
+    ##    spin_number color streak prev_run action bet_amount PL balance
+    ## 1            1 Black      0        0 No Bet         NA NA     500
+    ## 2            2   Red      0        0 No Bet         NA NA     500
+    ## 3            3 Black      0        0 No Bet         NA NA     500
+    ## 4            4   Red      0        0 No Bet         NA NA     500
+    ## 5            5 Black      0        0 No Bet         NA NA     500
+    ## 6            6   Red      0        0 No Bet         NA NA     500
+    ## 7            7   Red      1        0 No Bet         NA NA     500
+    ## 8            8 Black      0        1 No Bet         NA NA     500
+    ## 9            9 Black      1        0 No Bet         NA NA     500
+    ## 10          10 Green      0        1 No Bet         NA NA     500
 
 ``` r
 ggplot(spins) +
@@ -494,12 +495,12 @@ spins %>%
     ## # A tibble: 9 × 2
     ##   Metric                       Value
     ##   <chr>                        <dbl>
-    ## 1 Max Bet                        NA 
-    ## 2 Minimum Balance               480 
-    ## 3 Largest Loss (Single Spin)   -160 
-    ## 4 Largest Win (Single Spin)     320 
-    ## 5 Longest Unfavorable Run         4 
-    ## 6 Bet Amount - Median            20 
-    ## 7 Bet Amount - 75th Percentile   40 
-    ## 8 Bet Amount - 95th Percentile  152.
-    ## 9 Max Drawdown                  -20
+    ## 1 Max Bet                         NA
+    ## 2 Minimum Balance                480
+    ## 3 Largest Loss (Single Spin)    -160
+    ## 4 Largest Win (Single Spin)      320
+    ## 5 Longest Unfavorable Run          5
+    ## 6 Bet Amount - Median             30
+    ## 7 Bet Amount - 75th Percentile    40
+    ## 8 Bet Amount - 95th Percentile   160
+    ## 9 Max Drawdown                   -20
