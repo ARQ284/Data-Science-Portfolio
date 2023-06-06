@@ -394,8 +394,8 @@ spins %>%
 
 This method combines the Martingale strategy with betting against the
 trend. After 2 colors appear in a row, a bet is placed on the opposite
-color for \$20, and increses in a doubling sequence (per the Martingale
-strategy). 100 spins simulated below.
+color for \$20, and increases in a doubling sequence (per the Martingale
+strategy). 100 spins simulated below with a starting balance of \$500.
 
 ``` r
 pascalTriangle <- function(h) {
