@@ -1,0 +1,461 @@
+---
+title: "NYSERDA Solar Project EDA & Cost Prediction"
+output: rmarkdown::github_document
+---
+
+All data was retrieved from [DATA.NY.GOV](https://data.ny.gov/Energy-Environment/Solar-Electric-Programs-Reported-by-NYSERDA-Beginn/3x8r-34rs). Description of the data set can be found in the above link as well.
+
+## Data Preparation
+
+To begin this data analysis I have read in the downloaded csv file from the above link.
+
+I have limited projects to the following criteria
+
+-   Projects completed in 2019
+
+-   Completed projects; pipeline projects do not have a populated value
+
+-   Projects with \> \$0 cost
+
+-   Residential only; not enough commercial projects for a reliable sample and may skew projections and predictions
+
+I have pared down to only the most populated and reliable fields and consolidated values for `primary_inverter_manufacturer` and `primary_pv_module_manufacturer`. I replace a few NA and values with 0 or "Unk" for "unknown" and format the date fields.
+
+```{r}
+
+library(tidyverse,quietly = T)
+library(janitor,quietly = T)
+library(lubridate,quietly = T)
+
+
+SEP = read_csv("Solar_Electric_Programs_Reported_by_NYSERDA__Beginning_2000.csv") %>% 
+  clean_names() %>% 
+  filter(project_status == "Complete" & 
+           sector == "Residential" & 
+           project_cost > 0 &
+           expected_k_wh_annual_production > 0 &
+           #excluding bad data
+           project_cost != 207810.62
+         )
+
+SEP = SEP %>% select(county,municipality_type,
+                     electric_utility,purchase_type,date_application_received,date_completed,
+                     contractor,total_inverter_quantity,total_pv_module_quantity,
+                     primary_inverter_manufacturer,primary_pv_module_manufacturer,latitude,longitude,
+                     project_cost,incentive,total_nameplate_k_w_dc,expected_k_wh_annual_production) %>% 
+  mutate(
+         primary_pv_module_manufacturer= replace_na(primary_pv_module_manufacturer,"Unk"),
+         primary_inverter_manufacturer = replace_na(primary_inverter_manufacturer,"Unk"),
+         primary_inverter_manufacturer = fct_lump(primary_inverter_manufacturer, prop=0.05, other_level="Other"),
+         primary_pv_module_manufacturer = fct_lump(primary_pv_module_manufacturer, prop=0.05, other_level="Other"),
+         
+         incentive = replace_na(incentive,0),
+         date_application_received =  as.Date(date_application_received,format="%m/%d/%Y"),
+         date_completed =  as.Date(date_completed,format="%m/%d/%Y"),
+         project_duration = as.integer(difftime(date_completed,date_application_received,units = "days"))
+         ) %>% 
+  filter(year(date_completed) == 2019) %>% 
+  drop_na()
+
+str(SEP)
+```
+
+## Statistical
+
+Here is a readout of the statistics from each numeric field
+```{r}
+SEP %>% select_if(is.numeric) %>%  pastecs::stat.desc() %>% round(2) %>% rownames_to_column() %>%
+  filter(!str_detect(rowname,"nbr")) %>% 
+  as_tibble() %>%
+  knitr::kable(align = "l",format.args = list(big.mark = ","),format = "pipe") 
+```
+
+Additionally, I create a table of the rankings by project amount and project count for each contractor. I will utilize this table later on during data visualization to include only top n contractors. We can see that SunRun is by far the largest in both dollar and project volume.
+```{r}
+rankings = SEP %>% group_by(contractor) %>% 
+  summarise(project_ttl = sum(project_cost),n=n()) %>% 
+  arrange(desc(n)) %>% 
+  mutate(rnk_dollar = dense_rank(desc(project_ttl)),rnk_n = dense_rank(desc(n)))
+
+knitr::kable(head(rankings,15),align = "l",format.args = list(big.mark = ","),format = "pipe")
+```
+
+
+
+## Data Visualization
+
+SunRun has the highest aggregate project costs, as previously mentioned. The top 3, SunRun, SunPower Capital, and Venture Home Solar seem to dominate the market.
+
+```{r,fig.width = 10, fig.height = 5}
+ggplot(SEP %>% group_by(contractor) %>% 
+         summarise(project_cost = sum(project_cost)) %>% 
+         arrange(desc(project_cost)) %>% 
+         head(15)
+       ) +
+  aes(
+    x = reorder(contractor,-project_cost),
+    y = project_cost
+   #, fill= electric_utility
+  ) +
+  geom_col() +
+  scale_y_continuous(label = scales::dollar_format(suffix = "M",scale =  1e-7)) +
+  scale_x_discrete(guide = guide_axis(angle = 30)) +
+  labs(
+    x = "Contractor",
+    y = "Costs",
+    title = "Project Cost Total by Contractor",
+    subtitle = "Top 15 by Project Amount"
+  ) +
+  theme_bw()
+```
+
+To further illustrate the concentration to the top 3 contractors (and SunRun in particular), the number of projects and PV modules installed is also far ahead of the competition.
+```{r,fig.width = 10, fig.height = 5}
+
+ggplot(SEP %>% group_by(contractor) %>% 
+    summarise(`Photovoltaic (PV) Modules` = sum(total_pv_module_quantity),Projects=n()) %>% 
+    arrange(desc(`Photovoltaic (PV) Modules`)) %>% 
+    head(15) %>% pivot_longer(-contractor)) +
+  aes(
+    x = reorder(contractor,-value),
+    y = value
+   , fill= name
+  ) +
+  geom_bar(position="dodge", stat="identity") +
+  scale_y_continuous(label = scales::comma_format(),trans="sqrt") +
+  scale_x_discrete(guide = guide_axis(angle = 30)) +
+  labs(
+    x = "Contractor",
+    y = "Frequency",
+    title = "Project Photovoltaic Module (PV) Installs and Projects by Contractor (Scaled)",
+    subtitle = "Top 10 by PV Amount",
+    fill = "Metric"
+  ) +
+  theme_bw()
+```
+
+However, these top 3 don't even appear on the list of top 15 average project costs
+```{r,fig.width = 10, fig.height = 5}
+ggplot(SEP %>% group_by(contractor) %>% 
+         summarise(project_cost = mean(project_cost)) %>% 
+         arrange(desc(project_cost)) %>% 
+         head(15)
+       ) +
+  aes(
+    x = reorder(contractor,-project_cost),
+    y = project_cost
+  ) +
+  geom_col() +
+  scale_y_continuous(label = scales::dollar_format()) +
+  scale_x_discrete(guide = guide_axis(angle = 30)) +
+  labs(
+    x = "Contractor",
+    y = "Project Costs",
+    title = "Average Cost per Project by Contractor",
+    subtitle = "Top 15 by Project Amount Avg"
+  ) +
+  theme_bw()
+```
+
+
+A more normalized measure of cost is the project cost in relation to the number of PV modules installed. Said another way, this is the price at which a contractor can install a PV module on average. Below are the 15 highest.
+```{r,fig.width = 8, fig.height = 5}
+ggplot(SEP %>% group_by(contractor) %>% 
+         summarise(cost_to_module = sum(project_cost)/sum(total_pv_module_quantity),
+                   n = n()) %>% 
+         filter(n >= 10) %>% 
+         arrange(desc(cost_to_module)) %>% 
+         head(15)
+       ) +
+  aes(
+    x = reorder(contractor,-cost_to_module),
+    y = cost_to_module
+  ) +
+  geom_col() +
+  scale_y_continuous(label = scales::dollar_format()) +
+  scale_x_discrete(guide = guide_axis(angle = 60)) +
+  labs(
+    x = "Contractor",
+    y = "Project Costs",
+    title = "Average Cost per Photovoltaic (PV) Module Installed by Contractor",
+    subtitle = "Highest 15 by Cost / Module (minimum 10 projects)"
+  ) +
+  theme_bw()
+```
+
+
+Conversely, the 15 lowest
+```{r,fig.width = 8, fig.height = 5}
+ggplot(SEP %>% group_by(contractor) %>% 
+         summarise(cost_to_module = sum(project_cost)/sum(total_pv_module_quantity),
+                   n = n()) %>% 
+         filter(n >= 10) %>% 
+         arrange(cost_to_module) %>% 
+         head(15)
+       ) +
+  aes(
+    x = reorder(contractor,cost_to_module),
+    y = cost_to_module
+  ) +
+  geom_col() +
+  scale_y_continuous(label = scales::dollar_format()) +
+  scale_x_discrete(guide = guide_axis(angle = 60)) +
+  labs(
+    x = "Contractor",
+    y = "Project Costs",
+    title = "Average Cost per Photovoltaic (PV) Module Installed by Contractor",
+    subtitle = "Lowest 15 by Cost / Module (minimum 10 projects)"
+  ) +
+  theme_bw()
+```
+
+
+### Distributions
+```{r,fig.width = 6, fig.height = 3}
+ggplot(SEP) +
+  aes(x = project_cost) +
+  geom_histogram( fill = "#737373",binwidth = 1000) +
+  scale_y_continuous(label = scales::comma_format()) +
+  scale_x_continuous(label = scales::comma_format()) +
+  labs(
+    x = "Project Cost",
+    y = "Freq",
+    title = "Project Cost Distribution"
+  ) +
+  theme_bw()
+```
+
+
+```{r,fig.width = 6, fig.height = 3}
+ggplot(SEP) +
+  aes(x = expected_k_wh_annual_production) +
+  geom_histogram( fill = "#737373",binwidth = 1000) +
+  scale_y_continuous(label = scales::comma_format()) +
+  scale_x_continuous(label = scales::comma_format()) +
+  labs(
+    x = "Expected Output (kWh)",
+    y = "Freq",
+    title = "Project kWh Output Distribution"
+  ) +
+  theme_bw()
+```
+
+
+
+```{r,fig.width = 6, fig.height = 3}
+ggplot(SEP) +
+  aes(x = project_duration) +
+  geom_histogram( fill = "#737373",binwidth = 10) +
+  scale_y_continuous(label = scales::comma_format()) +
+  scale_x_continuous(label = scales::comma_format()) +
+  labs(
+    x = "Project Duration (Days)",
+    y = "Freq",
+    title = "Project Duration Distribution"
+  ) +
+  theme_bw()
+```
+### Correlations
+
+Now that we can see the distributions above, we can now move onto correlation visualizations. Below is a graph representing the relationship between project cost and time. I was surprised at the absence of a tighter positive correlation. 
+```{r,fig.width = 10, fig.height = 5}
+ggplot(SEP) +
+  aes(
+    x = project_duration,
+    y = project_cost,
+    colour = total_pv_module_quantity
+  ) +
+  geom_point( size = 1.5) +
+  scale_color_viridis_c(option = "inferno", direction = 1) +
+  scale_y_continuous(label = scales::dollar_format()) +
+  scale_x_continuous(label = scales::comma_format()) +
+  labs(
+    x = "Project Duration (Days)",
+    y = "Project Cost",
+    title = "Project Cost x Duration",
+    color = "Photovoltaic (PV) Modules"
+  ) +
+  theme_bw()
+```
+
+The next graph, below, represents the relationship between project cost and PV modules installed. Quadrant II, the upper left portion, would display projects that would be considered highly cost effective; project cost was lower when the number of modules was relatively high. Conversely, quadrant IV would represent low cost effectiveness. Additionally, the color of the expected output (visualized as color in this graph) would be another measure to consider.
+```{r,fig.width = 10, fig.height = 5}
+ggplot(SEP) +
+  aes(
+    x = project_cost,
+    y = total_pv_module_quantity,
+    colour = expected_k_wh_annual_production/1000
+  ) +
+  geom_point(shape = "circle", size = 1.5) +
+  scale_color_distiller(palette = "Set1", direction = 1) +
+   scale_x_continuous(label = scales::dollar_format()) +
+  scale_y_continuous(label = scales::comma_format()) +
+  labs(
+    x = "Project Cost",
+    y = "Photovoltaic (PV) Modules",
+    title = "Project Cost x Photovoltaic (PV) Modules",color = "Expected Output (kWh; thousands)"
+  ) +
+  theme_bw() +
+  theme(legend.position = "top")
+```
+
+
+Using the coordinates, I plot each project by cost geographically. 
+```{r,,fig.width = 10, fig.height = 5}
+library(sf)
+
+my_sf <- st_as_sf(SEP, coords = c('longitude', 'latitude'))
+
+
+ggplot(my_sf) + 
+  geom_sf(aes(color = project_cost/1000))+
+    scale_color_viridis_c(option = "inferno", direction = 1) +
+  labs(
+    x = "Latitude",
+    y = "Longitude",
+    title = "Project Cost by Region of NY",color = "Project Cost (Thousands)"
+  ) +
+  theme_bw()
+```
+
+
+
+## Cost Prediction Model
+
+### Preprocessing
+The next step is project cost prediction. First I will plot the correlations between the numeric attributes.
+
+Most of the features are highly correlated, outside of `total_inverter_quantiy` (which I also suspect contains erroneous data) which is removed later on.
+```{r,fig.width = 15, fig.height = 7.5}
+library(corrplot,quietly = T)
+corrplot(cor(SEP %>%  select(is.numeric,-c(latitude,longitude))), method="number",type="lower", order="hclust",number.cex = 1, tl.cex = 1)
+```
+
+Here I apply the steps to prepare the data for training and testing. As mentioned, I remove inverter quantity along with a handful of other fields, such as date completed and duration, which we would have no way of knowing if we were to apply the model to an existing pipeline project.
+
+I apply principal component analysis (PCA) to `expected_k_wh_annual_production`,`total_pv_module_quantity`, and `total_nameplate_k_w_dc` due to their high multicollinearity. I include `latitude` and `longitude` features without transforming and one-hot encode `contractor` (after lumping infrequent values together with `fct_lump` during the split) and component manufacturers.
+```{r}
+
+library(tidymodels,quietly = T)
+
+
+ml_df = initial_time_split(
+  SEP %>% 
+    mutate(contractor = fct_lump(contractor, prop=.02, other_level="Other")) %>% 
+    arrange(date_application_received),
+  prop = 0.80
+)
+
+
+preprocessing_recipe =
+  recipes::recipe(project_cost  ~ ., data = training(ml_df)) %>%
+  step_select(-c("county","electric_utility","total_inverter_quantity","incentive",
+                 "date_application_received","date_completed","project_duration")) %>% 
+  step_dummy(all_factor(),one_hot = T) %>%
+  step_pca("expected_k_wh_annual_production","total_pv_module_quantity", "total_nameplate_k_w_dc",
+           keep_original_cols = F) %>%
+  prep()
+
+
+train_proc = recipes::bake(
+  preprocessing_recipe, 
+  new_data = training(ml_df)
+)
+
+test_proc = recipes::bake(
+  preprocessing_recipe,
+  new_data = testing(ml_df)
+)
+
+```
+
+### Model Specifications and Fit
+
+
+Using xgBoost, I specify the number of trees and learning rate and fit the model.
+```{r}
+model = parsnip::boost_tree(trees = 4000,learn_rate = .01)  %>%
+  set_engine("xgboost") %>%
+  set_mode("regression")
+
+model_fit =
+  model %>%
+  fit(project_cost ~.,train_proc)
+
+```
+
+
+### Predictions & Model Evaluation
+
+First, I predict the new values and add back to the test portion of my data. I stratify the projects by cost into 10 quantiles, which I will reference later.
+```{r}
+test_pred = model_fit %>% predict(test_proc) %>% 
+  as.data.frame() %>% rename(cost_prediction = 1) %>%  
+  bind_cols(testing(ml_df)) %>% 
+  mutate(cost_prediction = cost_prediction,
+         delta = (cost_prediction-project_cost)/project_cost,
+         ntile = ntile(project_cost,10)
+         )
+```
+
+I then calculate three metrics on the overall results - mean percentage error, mean absolute percentage error, and mean absolute error.
+
+Overall, the model was ~13.67% off on average and ~$3,600 off in absolute terms on a project to project basis.
+```{r}
+
+multi_metric <- metric_set(mpe, mape, mae)
+
+test_pred %>% 
+  multi_metric(project_cost,cost_prediction) %>%
+  knitr::kable(align = "l",format.args = list(big.mark = ","),format = "pipe")
+```
+
+If we total the actual costs vs the predicted cost, overall the predictions are only off by 0.06%.
+```{r}
+test_pred %>% summarise(actual = sum(project_cost),pred = sum(cost_prediction)) %>% 
+  mutate(pct_error = (pred-actual)/actual) %>%
+  knitr::kable(align = "l",format.args = list(big.mark = ","),format = "pipe")
+```
+
+
+As mentioned above, I assigned each project a quantile. Below are the quantile numbers and statistics. Notice the 1st and 10th quantile have the largest ranges.
+```{r}
+test_pred %>% 
+  group_by(ntile) %>% 
+  summarise(range_begn = min(project_cost),
+            range_end = max(project_cost),
+            size = range_end - range_begn,
+            median = median(project_cost),
+            mean = mean(project_cost),
+            std_dev = sd(project_cost)
+            ,projects = n()) %>%
+   knitr::kable(align = "l",format.args = list(big.mark = ","),format = "pipe")
+```
+
+Next we can measure the performance on an aggregate basis and by ntile.
+
+As noted above, the 1st and 10th quantiles have the larges bin ranges and consequently are subject to more variation. 
+```{r}
+test_pred %>% 
+  group_by(ntile) %>% 
+  multi_metric(project_cost,cost_prediction) %>% 
+  pivot_wider(names_from = .metric,values_from = .estimate) %>%
+  knitr::kable(align = "l",format.args = list(big.mark = ","),format = "pipe")
+```
+
+Plotted below are the residuals
+```{r,fig.width = 10, fig.height = 5}
+ggplot(test_pred %>% group_by(ntile) %>%  slice_sample(prop=.20)) +
+  aes(x = project_cost, y = cost_prediction, colour = as.character(ntile)) +
+  geom_point(shape = "circle", size = 1.5) +
+  scale_x_continuous(label = scales::dollar_format(),limits = c(0,100000)) +
+  scale_y_continuous(label = scales::dollar_format(),limits = c(0,100000)) +
+  labs(
+    x = "Actual Cost",
+    y = "Prediction",
+    title = "Project Cost x Prediction",subtitle="20% sample from each ntile",color = "Quantile"
+  ) +
+  theme_bw() +
+  geom_abline(linewidth=1) +
+  theme(legend.position = "right") 
+```
