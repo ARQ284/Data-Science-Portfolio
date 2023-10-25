@@ -1,7 +1,8 @@
 Excel Merging
 ================
 
-Two workbooks with 3 sheets in each. Same format of (SALARY,DEPT,EMP)
+**Two workbooks with 3 sheets in each. Same format of
+(SALARY,DEPT,EMP)**
 
 ``` r
 library(tidyverse)
@@ -46,13 +47,19 @@ df %>% as_tibble() %>% sample_n(10) %>%
 
 | file_name  | sheet_name | SALARY    | DEPT | EMP |
 |:-----------|:-----------|:----------|:-----|:----|
-| Book2.xlsx | Sheet2     | 0.9789076 | A    | B   |
-| Book2.xlsx | Sheet2     | 0.1724285 | A    | B   |
-| Book2.xlsx | Sheet2     | 0.8737340 | A    | B   |
-| Book1.xlsx | Sheet3     | 0.0650768 | A    | B   |
-| Book1.xlsx | Sheet2     | 0.4619110 | A    | B   |
-| Book1.xlsx | Sheet2     | 0.2499500 | A    | B   |
-| Book1.xlsx | Sheet2     | 0.8737340 | A    | B   |
-| Book2.xlsx | Sheet1     | 0.2916887 | A    | B   |
-| Book2.xlsx | Sheet3     | 0.0582731 | A    | B   |
-| Book1.xlsx | Sheet1     | 0.1083938 | A    | B   |
+| Book1.xlsx | Sheet2     | 0.1724285 | A    | B   |
+| Book2.xlsx | Sheet1     | 0.2150512 | A    | B   |
+| Book1.xlsx | Sheet1     | 0.0895789 | A    | B   |
+| Book2.xlsx | Sheet1     | 0.8118907 | A    | B   |
+| Book1.xlsx | Sheet3     | 0.7320537 | A    | B   |
+| Book2.xlsx | Sheet3     | 0.0650768 | A    | B   |
+| Book1.xlsx | Sheet1     | 0.9381828 | A    | B   |
+| Book2.xlsx | Sheet1     | 0.7235724 | A    | B   |
+| Book1.xlsx | Sheet1     | 0.2150512 | A    | B   |
+| Book2.xlsx | Sheet1     | 0.0041448 | A    | B   |
+
+**Write to new file**
+
+``` r
+openxlsx::write.xlsx(df,file = "df.xlsx")
+```
