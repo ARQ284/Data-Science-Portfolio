@@ -40,19 +40,19 @@ df <- list.files(dir_path, re_file) %>%
 ```
 
 ``` r
-df %>% as_tibble() %>% sample_n(10)
+df %>% as_tibble() %>% sample_n(10) %>% 
+   knitr::kable(align = "l",format.args = list(big.mark = ","),format = "pipe") 
 ```
 
-    ## # A tibble: 10 × 5
-    ##    file_name  sheet_name SALARY DEPT  EMP  
-    ##    <chr>      <chr>       <dbl> <chr> <chr>
-    ##  1 Book2.xlsx Sheet2     0.463  A     B    
-    ##  2 Book2.xlsx Sheet2     0.197  A     B    
-    ##  3 Book1.xlsx Sheet2     0.463  A     B    
-    ##  4 Book2.xlsx Sheet3     0.391  A     B    
-    ##  5 Book2.xlsx Sheet1     0.215  A     B    
-    ##  6 Book2.xlsx Sheet2     0.927  A     B    
-    ##  7 Book1.xlsx Sheet3     0.0583 A     B    
-    ##  8 Book1.xlsx Sheet1     0.403  A     B    
-    ##  9 Book2.xlsx Sheet3     0.0962 A     B    
-    ## 10 Book1.xlsx Sheet2     0.250  A     B
+| file_name  | sheet_name | SALARY    | DEPT | EMP |
+|:-----------|:-----------|:----------|:-----|:----|
+| Book2.xlsx | Sheet2     | 0.9789076 | A    | B   |
+| Book2.xlsx | Sheet2     | 0.1724285 | A    | B   |
+| Book2.xlsx | Sheet2     | 0.8737340 | A    | B   |
+| Book1.xlsx | Sheet3     | 0.0650768 | A    | B   |
+| Book1.xlsx | Sheet2     | 0.4619110 | A    | B   |
+| Book1.xlsx | Sheet2     | 0.2499500 | A    | B   |
+| Book1.xlsx | Sheet2     | 0.8737340 | A    | B   |
+| Book2.xlsx | Sheet1     | 0.2916887 | A    | B   |
+| Book2.xlsx | Sheet3     | 0.0582731 | A    | B   |
+| Book1.xlsx | Sheet1     | 0.1083938 | A    | B   |
