@@ -371,7 +371,9 @@ ggplot(SEP) +
 ```
 
 ![](NYSERDA-Solar-Project-EDA---Cost-Prediction_files/figure-gfm/unnamed-chunk-11-1.png)<!-- -->
-\### Correlations
+\
+
+### Correlations
 
 Now that we can see the distributions above, we can now move onto
 correlation visualizations. Below is a graph representing the
@@ -608,7 +610,7 @@ test_pred %>%
 | mae     | standard   | 3,615.841523 |
 
 If we total the actual costs vs the predicted cost, overall the
-predictions are only off by 0.06%.
+predictions are only off by 0.0065%.
 
 ``` r
 test_pred %>% summarise(actual = sum(project_cost),pred = sum(cost_prediction)) %>% 
