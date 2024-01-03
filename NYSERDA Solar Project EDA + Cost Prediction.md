@@ -610,7 +610,7 @@ test_pred %>%
 | mae     | standard   | 3,615.841523 |
 
 If we total the actual costs vs the predicted cost, overall the
-predictions are only off by 0.0065%.
+predictions are only off by 0.65%.
 
 ``` r
 test_pred %>% summarise(actual = sum(project_cost),pred = sum(cost_prediction)) %>% 
